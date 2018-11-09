@@ -2,6 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 var mysql = require('mysql');
+var ent = require('./entidades');
 
 var corsOptions = {
   origin: 'http://localhost:4200',
@@ -25,23 +26,28 @@ var con = mysql.createConnection({
 
 
 //GET
-app.route('/api/entidades').get((req, res) => {
-      con.query('SELECT  '+
-              'e.nome_conjuntos_entidade as Nome '+
-          'FROM '+
-              'conjuntos_entidade e' , function (err, data) {
-          if (err) throw err;
-        res.send({Entidades: data});
-  });
-  // res.send({
-  //   Entidades: [{ nome: 'Lucifer' }, { nome: 'Baphomet' }, { nome: 'Belial' }, { nome: 'Beelzebulb' }]
-  // });
+app.route('/api/entidades*').get((req, res) => {
+      
+      var url = req.originalUrl.split("/");
+      console.log(url);
+      ent.getAllEntidades(req,res,con);
 });
 
 app.route('/api/entidades/:nome').get((req, res) => {
   const requestedEntidadeNome = req.params['nome'];
-  res.send({ nome: requestedEntidadeNome });
+  con.query('SELECT '+
+            'e.nome_entidade as nome,e.cod_entidade as codigo '+
+            'FROM  '+
+            'conjuntos_entidade ce '+
+            'INNER JOIN '+
+            'entidades e ON ce.id = e.id_Conjuntos_Entidade '+
+            'WHERE '+
+            'ce.nome_conjuntos_entidade = "'+ requestedEntidadeNome+'";', function (err, data) {
+          if (err) throw err;
+        res.send({Entidades: data});
+  });
 });
+
 
 //POST
 
@@ -49,10 +55,12 @@ app.use(bodyParser.json());
 app.route('/api/entidades').post((req, res) => {
   res.send(201, req.body);
 });
+
 //UPDATE
 app.route('/api/entidades/:nome').put((req, res) => {
   res.send(200, req.body);
 });
+
 //DELETE
 app.route('/api/entidades/:nome').delete((req, res) => {
   res.sendStatus(204);
